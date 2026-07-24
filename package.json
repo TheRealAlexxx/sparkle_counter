@@ -1,0 +1,7 @@
+{
+  "name": "sparkle-counter-netlify",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Netlify Function version: counts @gabin's :sparkling_heart: reactions and posts a running total to a Slack channel."
+}
