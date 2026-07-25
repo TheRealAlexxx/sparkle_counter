@@ -52,36 +52,28 @@ const app = new App({
   socketMode: true,
 });
 
-function counterText(count) {
-  return `:sparkling_heart: <@${TARGET_USER_ID}> has reacted with :${TARGET_EMOJI}: *${count}* time${count === 1 ? '' : 's'}.`;
+// Best-effort: get a link to the message that was reacted to, so the
+// announcement can point back to it. Falls back gracefully if it fails
+// (e.g. message in a channel the bot can't read a permalink for).
+async function getPermalink(client, channel, ts) {
+  try {
+    const result = await client.chat.getPermalink({ channel, message_ts: ts });
+    return result.permalink;
+  } catch (err) {
+    console.warn('Could not fetch permalink:', err.data?.error || err.message);
+    return null;
+  }
 }
 
-// Post the counter message the first time, or update it in place afterward,
-// so the channel doesn't get spammed with a new message per reaction.
-async function syncCounterMessage(client) {
-  const text = counterText(state.count);
+async function announceReaction(client, event) {
+  const permalink = await getPermalink(client, event.item.channel, event.item.ts);
+  const linkPart = permalink ? ` — <${permalink}|jump to message>` : '';
+  const text = `:sparkling_heart: <@${TARGET_USER_ID}> reacted with :${TARGET_EMOJI}:${linkPart}\nTotal so far: *${state.count}*`;
 
-  if (state.messageTs) {
-    try {
-      await client.chat.update({
-        channel: COUNTER_CHANNEL_ID,
-        ts: state.messageTs,
-        text,
-      });
-      return;
-    } catch (err) {
-      // Message may have been deleted, or the ts is stale — fall through
-      // and post a fresh one.
-      console.warn('Could not update existing counter message, posting a new one:', err.data?.error || err.message);
-    }
-  }
-
-  const result = await client.chat.postMessage({
+  await client.chat.postMessage({
     channel: COUNTER_CHANNEL_ID,
     text,
   });
-  state.messageTs = result.ts;
-  saveState(state);
 }
 
 app.event('reaction_added', async ({ event, client }) => {
@@ -91,7 +83,7 @@ app.event('reaction_added', async ({ event, client }) => {
 
     state.count += 1;
     saveState(state);
-    await syncCounterMessage(client);
+    await announceReaction(client, event);
 
     console.log(`+1 (${state.count} total) — reaction_added by ${event.user}`);
   } catch (err) {
@@ -107,7 +99,10 @@ if (DECREMENT_ON_REMOVE === 'true') {
 
       state.count = Math.max(0, state.count - 1);
       saveState(state);
-      await syncCounterMessage(client);
+      await client.chat.postMessage({
+        channel: COUNTER_CHANNEL_ID,
+        text: `:heavy_minus_sign: <@${TARGET_USER_ID}> removed a :${TARGET_EMOJI}: reaction.\nTotal so far: *${state.count}*`,
+      });
 
       console.log(`-1 (${state.count} total) — reaction_removed by ${event.user}`);
     } catch (err) {
@@ -118,7 +113,7 @@ if (DECREMENT_ON_REMOVE === 'true') {
 
 (async () => {
   await app.start();
-  console.log('ur stupid bot is running');
-  console.log(`tracking user ${TARGET_USER_ID} reacting with :${TARGET_EMOJI}:`);
-  console.log(`current count: ${state.count}`);
+  console.log('⚡️ Sparkle counter bot is running (Socket Mode).');
+  console.log(`Tracking user ${TARGET_USER_ID} reacting with :${TARGET_EMOJI}:`);
+  console.log(`Current count: ${state.count}`);
 })();
