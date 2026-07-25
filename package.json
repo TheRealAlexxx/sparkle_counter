@@ -1,7 +1,14 @@
 {
-  "name": "sparkle-counter-netlify",
+  "name": "sparkle-counter-bot",
   "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "description": "Netlify Function version: counts @gabin's :sparkling_heart: reactions and posts a running total to a Slack channel."
+  "description": "Counts how many times a specific Slack user reacts with :sparkling_heart: and posts a running total to a public channel.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.19.0",
+    "dotenv": "^16.4.5"
+  }
 }
