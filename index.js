@@ -10,7 +10,7 @@ const {
   TARGET_USER_ID,
   TARGET_EMOJI,
   COUNTER_CHANNEL_ID,
-  // If true, a reaction_removed event will decrement the count, so the
+  // If true,a reaction_removed event will decrement the count, so the
   // number reflects the *current* live count of sparkling_heart reactions
   // from this user, rather than a cumulative "all-time" total.
   DECREMENT_ON_REMOVE,
